@@ -2,8 +2,7 @@
 
 A random name picker, group maker, and classroom timer built for Regis Jesuit High School teachers.
 
-**[Launch Raider Spinner 2 →](https://rjedtech.github.io/Raider-Spinner/)**
-
+**[Launch Raider Spinner 2 →](https://rjedtech.github.io/Raider-Spinner-2/)
 ## Features
 
 - **Spinner** — Tap the wheel to randomly select a student. Toggle "Remove after picked" to avoid repeats, with a visual tracker showing who's already been called.
