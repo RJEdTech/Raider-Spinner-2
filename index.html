@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raider Spinner 2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f0f1a;
+    color: #eee;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  body.fullscreen { padding: 12px; }
+  .container { max-width: 720px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #666; margin-bottom: 4px; }
+  .header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #ff4757, #ffa502, #ff6348); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .tagline { font-size: 12px; color: #666; margin-top: 4px; }
+
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  label.section-label { font-size: 12px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; }
+  textarea {
+    width: 100%; min-height: 90px; padding: 12px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
+    color: #eee; font-size: 14px; font-family: inherit; resize: vertical; outline: none;
+  }
+  textarea::placeholder { color: #555; }
+  select {
+    padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.3); color: #eee; font-size: 13px; font-family: inherit; outline: none;
+  }
+  .btn {
+    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #ff4757, #ff6348); color: #fff;
+    font-weight: 700; font-size: 13px; font-family: inherit;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-outline {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+    background: transparent; color: #ccc; cursor: pointer; font-size: 12px;
+    font-family: inherit; font-weight: 600;
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.05); }
+  .btn-ghost {
+    padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+    background: transparent; color: #ff4757; cursor: pointer; font-size: 12px;
+    font-family: inherit; font-weight: 600;
+  }
+
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid transparent; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    background: rgba(255,255,255,0.04); color: #888;
+  }
+  .tab.active { background: rgba(255,71,87,0.15); color: #ff4757; border-color: rgba(255,71,87,0.3); }
+
+  .options-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 14px; }
+  .options-bar label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #aaa; }
+  .options-bar input[type="checkbox"] { accent-color: #ff4757; }
+
+  .result-banner {
+    text-align: center; margin-bottom: 14px; padding: 14px 20px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255,71,87,0.12), rgba(255,165,2,0.08));
+    border: 1px solid rgba(255,71,87,0.2); display: none;
+  }
+  .result-banner.show { display: block; }
+  .result-banner .label { font-size: 11px; color: #ff6348; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px; }
+  .result-banner .name { font-size: 26px; font-weight: 800; color: #fff; }
+
+  .wheel-area { position: relative; width: 340px; max-width: 90vw; margin: 0 auto; aspect-ratio: 1; }
+  .pointer {
+    position: absolute; top: -2px; left: 50%; transform: translateX(-50%); z-index: 10;
+    width: 0; height: 0;
+    border-left: 12px solid transparent; border-right: 12px solid transparent;
+    border-top: 22px solid #ff4757;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  .wheel-wrapper {
+    width: 100%; height: 100%; border-radius: 50%; overflow: hidden; cursor: pointer;
+    position: relative;
+  }
+  .wheel-wrapper.spinning { cursor: default; }
+  .wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; }
+  .center-dot {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: radial-gradient(circle, #fff, #e0e0e0);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 5; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 800; color: #555; letter-spacing: 0.5px;
+  }
+  .spin-hint { text-align: center; font-size: 13px; color: #666; margin-top: 10px; }
+
+  /* Picked list */
+  .picked-list { margin-top: 14px; }
+  .picked-list .title { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .picked-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .picked-tag {
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    background: rgba(255,255,255,0.03); color: #555; text-decoration: line-through;
+  }
+  .picked-tag.latest {
+    background: rgba(255,71,87,0.15); color: #ff4757; text-decoration: none;
+  }
+
+  /* Timer */
+  .timer-section { margin-top: 14px; text-align: center; }
+  .timer-display {
+    font-size: 48px; font-weight: 800; font-family: 'Courier New', monospace;
+    color: #eee; margin: 8px 0;
+  }
+  .timer-display.warning { color: #ffa502; }
+  .timer-display.danger { color: #ff4757; }
+  .timer-presets { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .timer-preset {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+    background: transparent; color: #aaa; cursor: pointer; font-size: 12px;
+    font-family: inherit; font-weight: 600;
+  }
+  .timer-preset.active { background: rgba(255,71,87,0.15); color: #ff4757; border-color: rgba(255,71,87,0.3); }
+  .timer-controls { display: flex; gap: 8px; justify-content: center; }
+
+  /* Groups */
+  .group-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 14px; }
+  .group-controls label { font-size: 13px; color: #aaa; }
+  .size-btns { display: flex; gap: 4px; }
+  .size-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    background: rgba(255,255,255,0.06); color: #888;
+  }
+  .size-btn.active { background: rgba(255,71,87,0.2); color: #ff4757; }
+  .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .group-card { padding: 14px; border-radius: 10px; }
+  .group-card .group-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .group-card .member { font-size: 14px; color: #ddd; padding: 3px 0; font-weight: 500; }
+  .groups-summary { text-align: center; margin-top: 14px; font-size: 12px; color: #666; }
+  .copy-toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    padding: 10px 24px; border-radius: 8px; background: #2ecc71; color: #fff;
+    font-weight: 700; font-size: 13px; z-index: 100; display: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .copy-toast.show { display: block; }
+
+  /* Saved classes */
+  .saved-section { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .saved-class-btn {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: #ccc; cursor: pointer; font-size: 12px;
+    font-family: inherit; font-weight: 600; position: relative;
+  }
+  .saved-class-btn:hover { background: rgba(255,255,255,0.08); }
+  .saved-class-btn .delete-x {
+    margin-left: 6px; color: #666; font-weight: 400;
+  }
+  .saved-class-btn .delete-x:hover { color: #ff4757; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 14px; flex-wrap: wrap; }
+  .tool-btn {
+    padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03); color: #888; cursor: pointer; font-size: 12px;
+    font-family: inherit; display: flex; align-items: center; gap: 4px;
+  }
+  .tool-btn:hover { background: rgba(255,255,255,0.06); color: #ccc; }
+  .tool-btn.active { color: #ff4757; border-color: rgba(255,71,87,0.3); }
+
+  .footer { text-align: center; margin-top: 28px; padding-top: 14px; font-size: 10px; color: #444; border-top: 1px solid rgba(255,255,255,0.04); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header" id="headerSection">
+    <div class="sub">Regis Jesuit High School</div>
+    <h1>Raider Spinner <span style="font-size:16px;opacity:0.6;">2</span></h1>
+    <div class="tagline">Random name picker · Group maker · Timer · No ads · No tracking</div>
+  </div>
+
+  <!-- CLASS INPUT -->
+  <div class="card" id="inputCard">
+    <div class="row-between" style="margin-bottom:8px;">
+      <label class="section-label" style="margin-bottom:0;">Student Names</label>
+      <div class="row" id="savedClassesRow"></div>
+    </div>
+    <textarea id="nameInput" placeholder="Paste names here — one per line or separated by commas"></textarea>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn" id="loadBtn">Load Names</button>
+      <button class="btn-outline" id="saveClassBtn">Save as Class</button>
+      <span id="nameCount" style="font-size:12px;color:#888;"></span>
+    </div>
+    <div class="saved-section" id="savedSection">
+      <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Saved Classes</div>
+      <div class="row" id="savedClassList" style="gap:6px;flex-wrap:wrap;"></div>
+      <div id="noSavedMsg" style="font-size:12px;color:#555;">No saved classes yet</div>
+    </div>
+  </div>
+
+  <!-- MAIN TOOL AREA -->
+  <div id="toolArea" class="hidden">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="tool-btn" id="soundToggle" title="Toggle sound">🔊 Sound</button>
+      <button class="tool-btn" id="fullscreenToggle" title="Fullscreen">⛶ Fullscreen</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tabSpinner" data-tab="spinner">Spinner</button>
+      <button class="tab" id="tabGroups" data-tab="groups">Group Maker</button>
+      <button class="tab" id="tabTimer" data-tab="timer">Timer</button>
+    </div>
+
+    <!-- SPINNER PANEL -->
+    <div id="spinnerPanel">
+      <div class="options-bar">
+        <label><input type="checkbox" id="removePicked"> Remove after picked</label>
+        <label><input type="checkbox" id="multiPick"> Pick multiple:
+          <select id="multiPickCount">
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </label>
+        <button class="btn-ghost hidden" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="result-banner" id="resultBanner">
+        <div class="label">Selected</div>
+        <div class="name" id="resultName"></div>
+      </div>
+
+      <div class="wheel-area" id="wheelArea">
+        <div class="pointer"></div>
+        <div class="wheel-wrapper" id="wheelWrapper">
+          <div class="wheel" id="wheel"></div>
+          <div class="center-dot">SPIN</div>
+        </div>
+      </div>
+      <div class="spin-hint" id="spinHint">Tap the wheel to spin</div>
+
+      <div id="emptyMsg" class="hidden" style="text-align:center;padding:40px;color:#888;font-size:14px;"></div>
+
+      <!-- Picked names (visible when remove mode) -->
+      <div class="picked-list hidden" id="pickedList">
+        <div class="title">Already Called</div>
+        <div class="picked-tags" id="pickedTags"></div>
+      </div>
+    </div>
+
+    <!-- GROUPS PANEL -->
+    <div id="groupsPanel" class="hidden">
+      <div class="group-controls">
+        <label>Per group:</label>
+        <div class="size-btns" id="sizeBtns"></div>
+        <button class="btn" style="margin-left:auto;" id="genBtn">Generate</button>
+      </div>
+      <div class="groups-grid" id="groupsGrid"></div>
+      <div class="groups-summary hidden" id="groupsSummary"></div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="btn-outline hidden" id="copyGroupsBtn">📋 Copy Groups to Clipboard</button>
+      </div>
+    </div>
+
+    <!-- TIMER PANEL -->
+    <div id="timerPanel" class="hidden">
+      <div class="card" style="text-align:center;">
+        <div class="timer-presets">
+          <button class="timer-preset active" data-seconds="30">0:30</button>
+          <button class="timer-preset" data-seconds="60">1:00</button>
+          <button class="timer-preset" data-seconds="90">1:30</button>
+          <button class="timer-preset" data-seconds="120">2:00</button>
+          <button class="timer-preset" data-seconds="180">3:00</button>
+          <button class="timer-preset" data-seconds="300">5:00</button>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:12px;color:#888;">Custom (seconds): </label>
+          <input type="number" id="customTimerInput" min="5" max="600" value="" placeholder="e.g. 45"
+            style="width:70px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.3);color:#eee;font-size:13px;font-family:inherit;outline:none;">
+          <button class="btn-outline" id="customTimerBtn" style="margin-left:4px;">Set</button>
+        </div>
+        <div class="timer-display" id="timerDisplay">0:30</div>
+        <div class="timer-controls">
+          <button class="btn" id="timerStartBtn">Start</button>
+          <button class="btn-outline" id="timerResetBtn">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer" id="footerSection">Raider Spinner 2 · Built for RJ teachers · No data leaves your browser</div>
+</div>
+
+<div class="copy-toast" id="copyToast">Copied to clipboard!</div>
+
+<script>
+(function() {
+  var COLORS = [
+    "#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6",
+    "#1abc9c","#e67e22","#2980b9","#27ae60","#c0392b",
+    "#8e44ad","#16a085","#d35400","#2c3e50","#f1c40f",
+    "#7f8c8d","#e84393","#00b894","#6c5ce7","#fdcb6e"
+  ];
+
+  var allNames = [];
+  var pool = [];
+  var pickedNames = [];
+  var spinning = false;
+  var currentRotation = 0;
+  var groupSize = 2;
+  var lastGroups = [];
+  var soundOn = true;
+  var timerSeconds = 30;
+  var timerRemaining = 30;
+  var timerInterval = null;
+  var timerRunning = false;
+
+  // Audio context for sounds
+  var audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    return audioCtx;
+  }
+  function playTick() {
+    if (!soundOn) return;
+    var ctx = getAudioCtx(); if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 600 + Math.random() * 200;
+    osc.type = "sine";
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.05);
+  }
+  function playChime() {
+    if (!soundOn) return;
+    var ctx = getAudioCtx(); if (!ctx) return;
+    [523, 659, 784].forEach(function(freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      var t = ctx.currentTime + i * 0.12;
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    });
+  }
+  function playBuzz() {
+    if (!soundOn) return;
+    var ctx = getAudioCtx(); if (!ctx) return;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 220;
+    osc.type = "square";
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+  }
+
+  // DOM refs
+  var nameInput = document.getElementById("nameInput");
+  var loadBtn = document.getElementById("loadBtn");
+  var saveClassBtn = document.getElementById("saveClassBtn");
+  var nameCount = document.getElementById("nameCount");
+  var toolArea = document.getElementById("toolArea");
+  var tabSpinner = document.getElementById("tabSpinner");
+  var tabGroups = document.getElementById("tabGroups");
+  var tabTimer = document.getElementById("tabTimer");
+  var spinnerPanel = document.getElementById("spinnerPanel");
+  var groupsPanel = document.getElementById("groupsPanel");
+  var timerPanel = document.getElementById("timerPanel");
+  var removePickedCb = document.getElementById("removePicked");
+  var multiPickCb = document.getElementById("multiPick");
+  var multiPickCount = document.getElementById("multiPickCount");
+  var resetBtn = document.getElementById("resetBtn");
+  var resultBanner = document.getElementById("resultBanner");
+  var resultName = document.getElementById("resultName");
+  var wheelArea = document.getElementById("wheelArea");
+  var wheelWrapper = document.getElementById("wheelWrapper");
+  var wheel = document.getElementById("wheel");
+  var spinHint = document.getElementById("spinHint");
+  var emptyMsg = document.getElementById("emptyMsg");
+  var pickedList = document.getElementById("pickedList");
+  var pickedTags = document.getElementById("pickedTags");
+  var sizeBtns = document.getElementById("sizeBtns");
+  var genBtn = document.getElementById("genBtn");
+  var groupsGrid = document.getElementById("groupsGrid");
+  var groupsSummary = document.getElementById("groupsSummary");
+  var copyGroupsBtn = document.getElementById("copyGroupsBtn");
+  var copyToast = document.getElementById("copyToast");
+  var savedClassList = document.getElementById("savedClassList");
+  var noSavedMsg = document.getElementById("noSavedMsg");
+  var soundToggle = document.getElementById("soundToggle");
+  var fullscreenToggle = document.getElementById("fullscreenToggle");
+  var headerSection = document.getElementById("headerSection");
+  var inputCard = document.getElementById("inputCard");
+  var footerSection = document.getElementById("footerSection");
+
+  // ========== SAVED CLASSES (localStorage) ==========
+  function getSavedClasses() {
+    try { return JSON.parse(localStorage.getItem("raider_spinner_classes") || "{}"); } catch(e) { return {}; }
+  }
+  function saveSavedClasses(data) {
+    try { localStorage.setItem("raider_spinner_classes", JSON.stringify(data)); } catch(e) {}
+  }
+  function renderSavedClasses() {
+    var classes = getSavedClasses();
+    var keys = Object.keys(classes);
+    savedClassList.innerHTML = "";
+    if (keys.length === 0) {
+      noSavedMsg.classList.remove("hidden");
+      return;
+    }
+    noSavedMsg.classList.add("hidden");
+    keys.forEach(function(name) {
+      var btn = document.createElement("button");
+      btn.className = "saved-class-btn";
+      btn.innerHTML = name + ' <span class="delete-x">✕</span>';
+      btn.addEventListener("click", function(e) {
+        if (e.target.classList.contains("delete-x")) {
+          if (confirm("Delete \"" + name + "\"?")) {
+            var c = getSavedClasses();
+            delete c[name];
+            saveSavedClasses(c);
+            renderSavedClasses();
+          }
+          return;
+        }
+        nameInput.value = classes[name].join("\n");
+        loadNamesFromInput();
+      });
+      savedClassList.appendChild(btn);
+    });
+  }
+
+  saveClassBtn.addEventListener("click", function() {
+    var raw = nameInput.value;
+    var names = raw.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+    if (names.length === 0) return;
+    var className = prompt("Name this class (e.g. \"Period 1\" or \"AP Micro\"):");
+    if (!className || !className.trim()) return;
+    var classes = getSavedClasses();
+    classes[className.trim()] = names;
+    saveSavedClasses(classes);
+    renderSavedClasses();
+  });
+
+  renderSavedClasses();
+
+  // ========== LOAD NAMES ==========
+  function loadNamesFromInput() {
+    var raw = nameInput.value;
+    allNames = raw.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+    if (allNames.length === 0) return;
+    pool = allNames.slice();
+    pickedNames = [];
+    nameCount.textContent = allNames.length + " name" + (allNames.length !== 1 ? "s" : "") + " loaded";
+    toolArea.classList.remove("hidden");
+    resultBanner.classList.remove("show");
+    pickedList.classList.add("hidden");
+    pickedTags.innerHTML = "";
+    currentRotation = 0;
+    buildWheel();
+    buildSizeBtns();
+    updateSpinnerUI();
+  }
+
+  loadBtn.addEventListener("click", loadNamesFromInput);
+
+  // ========== TABS ==========
+  function switchTab(tab) {
+    tabSpinner.classList.toggle("active", tab === "spinner");
+    tabGroups.classList.toggle("active", tab === "groups");
+    tabTimer.classList.toggle("active", tab === "timer");
+    spinnerPanel.classList.toggle("hidden", tab !== "spinner");
+    groupsPanel.classList.toggle("hidden", tab !== "groups");
+    timerPanel.classList.toggle("hidden", tab !== "timer");
+  }
+  tabSpinner.addEventListener("click", function() { switchTab("spinner"); });
+  tabGroups.addEventListener("click", function() { switchTab("groups"); });
+  tabTimer.addEventListener("click", function() { switchTab("timer"); });
+
+  // ========== SOUND TOGGLE ==========
+  soundToggle.addEventListener("click", function() {
+    soundOn = !soundOn;
+    soundToggle.textContent = soundOn ? "🔊 Sound" : "🔇 Muted";
+    soundToggle.classList.toggle("active", !soundOn);
+  });
+
+  // ========== FULLSCREEN ==========
+  var isFullscreen = false;
+  fullscreenToggle.addEventListener("click", function() {
+    isFullscreen = !isFullscreen;
+    document.body.classList.toggle("fullscreen", isFullscreen);
+    headerSection.classList.toggle("hidden", isFullscreen);
+    inputCard.classList.toggle("hidden", isFullscreen);
+    footerSection.classList.toggle("hidden", isFullscreen);
+    fullscreenToggle.textContent = isFullscreen ? "⛶ Exit" : "⛶ Fullscreen";
+    fullscreenToggle.classList.toggle("active", isFullscreen);
+    if (isFullscreen && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function(){});
+    } else if (!isFullscreen && document.exitFullscreen) {
+      document.exitFullscreen().catch(function(){});
+    }
+  });
+
+  // ========== SPINNER ==========
+  removePickedCb.addEventListener("change", function() { doResetPool(); });
+  resetBtn.addEventListener("click", function() { doResetPool(); });
+
+  function doResetPool() {
+    pool = allNames.slice();
+    pickedNames = [];
+    resultBanner.classList.remove("show");
+    pickedList.classList.add("hidden");
+    pickedTags.innerHTML = "";
+    currentRotation = 0;
+    buildWheel();
+    updateSpinnerUI();
+  }
+
+  function buildWheel() {
+    wheel.innerHTML = "";
+    wheel.style.transition = "none";
+    wheel.style.transform = "rotate(0deg)";
+    currentRotation = 0;
+
+    if (pool.length < 2) return;
+    var n = pool.length;
+    var sliceAngle = 360 / n;
+    var stops = [];
+    for (var i = 0; i < n; i++) {
+      var start = (i * sliceAngle).toFixed(2);
+      var end = ((i + 1) * sliceAngle).toFixed(2);
+      stops.push(COLORS[i % COLORS.length] + " " + start + "deg " + end + "deg");
+    }
+    wheel.style.background = "conic-gradient(from 0deg, " + stops.join(", ") + ")";
+    wheel.style.borderRadius = "50%";
+
+    for (var i = 0; i < n; i++) {
+      var midAngle = sliceAngle * i + sliceAngle / 2;
+      var onLeft = (midAngle % 360) > 90 && (midAngle % 360) < 270;
+      var labelR = onLeft ? 0.32 : 0.38;
+      var radians = (midAngle - 90) * Math.PI / 180;
+      var x = 50 + labelR * 100 * Math.cos(radians);
+      var y = 50 + labelR * 100 * Math.sin(radians);
+      var textRotation = onLeft ? midAngle + 180 : midAngle;
+
+      var el = document.createElement("div");
+      el.style.position = "absolute";
+      el.style.left = x + "%";
+      el.style.top = y + "%";
+      el.style.transform = "translate(-50%,-50%) rotate(" + textRotation + "deg)";
+      el.style.color = "white";
+      el.style.fontWeight = "700";
+      el.style.textShadow = "0 1px 3px rgba(0,0,0,0.5)";
+      el.style.whiteSpace = "nowrap";
+      el.style.pointerEvents = "none";
+      el.style.zIndex = "2";
+      var fs = n > 20 ? 8 : n > 14 ? 9 : n > 8 ? 11 : n > 4 ? 13 : 15;
+      el.style.fontSize = fs + "px";
+      var display = pool[i];
+      if (display.length > 12) display = display.slice(0, 10) + "\u2026";
+      el.textContent = display;
+      wheel.appendChild(el);
+    }
+  }
+
+  function updateSpinnerUI() {
+    var isRemove = removePickedCb.checked;
+    if (isRemove && pool.length < allNames.length) {
+      resetBtn.classList.remove("hidden");
+      resetBtn.textContent = "Reset (" + pool.length + "/" + allNames.length + " left)";
+    } else {
+      resetBtn.classList.add("hidden");
+    }
+
+    if (pool.length >= 2) {
+      wheelArea.classList.remove("hidden");
+      emptyMsg.classList.add("hidden");
+      spinHint.classList.remove("hidden");
+      spinHint.textContent = "Tap the wheel to spin";
+    } else if (pool.length === 1) {
+      wheelArea.classList.add("hidden");
+      spinHint.classList.add("hidden");
+      emptyMsg.classList.remove("hidden");
+      emptyMsg.innerHTML = "Only <strong style='color:#ff4757'>" + pool[0] + "</strong> remains!";
+      addResetButton(emptyMsg);
+    } else {
+      wheelArea.classList.add("hidden");
+      spinHint.classList.add("hidden");
+      emptyMsg.classList.remove("hidden");
+      emptyMsg.innerHTML = "All names picked!";
+      addResetButton(emptyMsg);
+    }
+
+    renderPickedNames();
+  }
+
+  function addResetButton(parent) {
+    var br = document.createElement("br");
+    var rb = document.createElement("button");
+    rb.className = "btn-ghost";
+    rb.style.marginTop = "12px";
+    rb.textContent = "Reset Pool";
+    rb.addEventListener("click", doResetPool);
+    parent.appendChild(br);
+    parent.appendChild(rb);
+  }
+
+  function renderPickedNames() {
+    if (!removePickedCb.checked || pickedNames.length === 0) {
+      pickedList.classList.add("hidden");
+      return;
+    }
+    pickedList.classList.remove("hidden");
+    pickedTags.innerHTML = "";
+    for (var i = pickedNames.length - 1; i >= 0; i--) {
+      var span = document.createElement("span");
+      span.className = "picked-tag" + (i === pickedNames.length - 1 ? " latest" : "");
+      span.textContent = pickedNames[i];
+      pickedTags.appendChild(span);
+    }
+  }
+
+  // Tick sound during spin
+  var tickInterval = null;
+
+  wheelWrapper.addEventListener("click", function() {
+    if (spinning || pool.length < 2) return;
+    spinning = true;
+
+    // Init audio context on user gesture
+    getAudioCtx();
+
+    var n = pool.length;
+    var targetIdx = Math.floor(Math.random() * n);
+    var sliceAngle = 360 / n;
+    var targetRemainder = 360 - (targetIdx + 0.5) * sliceAngle;
+    var extraSpins = (5 + Math.floor(Math.random() * 3)) * 360;
+    var newRotation = currentRotation + extraSpins + ((targetRemainder - (currentRotation % 360)) + 360) % 360;
+
+    wheel.style.transition = "none";
+    wheel.style.transform = "rotate(" + currentRotation + "deg)";
+    void wheel.offsetHeight;
+    wheel.style.transition = "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)";
+    wheel.style.transform = "rotate(" + newRotation + "deg)";
+    currentRotation = newRotation;
+    wheelWrapper.classList.add("spinning");
+    spinHint.textContent = "";
+
+    // Tick sounds (decelerating)
+    var tickRate = 50;
+    var tickCount = 0;
+    clearInterval(tickInterval);
+    tickInterval = setInterval(function() {
+      playTick();
+      tickCount++;
+      if (tickCount > 30) {
+        clearInterval(tickInterval);
+      }
+    }, tickRate);
+    // Slow down ticks
+    setTimeout(function() { clearInterval(tickInterval); tickInterval = setInterval(function() { playTick(); }, 150); }, 1500);
+    setTimeout(function() { clearInterval(tickInterval); tickInterval = setInterval(function() { playTick(); }, 300); }, 2800);
+    setTimeout(function() { clearInterval(tickInterval); }, 3800);
+
+    setTimeout(function() {
+      spinning = false;
+      wheelWrapper.classList.remove("spinning");
+      clearInterval(tickInterval);
+      playChime();
+
+      var picked = pool[targetIdx];
+      resultName.textContent = picked;
+      resultBanner.classList.add("show");
+      spinHint.textContent = "Tap the wheel to spin again";
+
+      if (removePickedCb.checked) {
+        pickedNames.push(picked);
+        pool.splice(targetIdx, 1);
+        wheel.style.transition = "none";
+        wheel.style.transform = "rotate(0deg)";
+        currentRotation = 0;
+        void wheel.offsetHeight;
+        buildWheel();
+        updateSpinnerUI();
+      }
+    }, 4200);
+  });
+
+  // ========== GROUPS ==========
+  function buildSizeBtns() {
+    sizeBtns.innerHTML = "";
+    [2, 3, 4, 5].forEach(function(n) {
+      var btn = document.createElement("button");
+      btn.className = "size-btn" + (n === groupSize ? " active" : "");
+      btn.textContent = n;
+      btn.addEventListener("click", function() {
+        groupSize = n;
+        sizeBtns.querySelectorAll(".size-btn").forEach(function(b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+      });
+      sizeBtns.appendChild(btn);
+    });
+  }
+
+  genBtn.addEventListener("click", function() {
+    var shuffled = allNames.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+    }
+    lastGroups = [];
+    for (var i = 0; i < shuffled.length; i += groupSize) {
+      lastGroups.push(shuffled.slice(i, i + groupSize));
+    }
+
+    groupsGrid.innerHTML = "";
+    for (var i = 0; i < lastGroups.length; i++) {
+      var card = document.createElement("div");
+      card.className = "group-card";
+      var color = COLORS[i % COLORS.length];
+      card.style.background = color + "11";
+      card.style.border = "1px solid " + color + "33";
+      var title = document.createElement("div");
+      title.className = "group-title";
+      title.style.color = color;
+      title.textContent = "Group " + (i + 1);
+      card.appendChild(title);
+      for (var j = 0; j < lastGroups[i].length; j++) {
+        var div = document.createElement("div");
+        div.className = "member";
+        div.textContent = lastGroups[i][j];
+        card.appendChild(div);
+      }
+      groupsGrid.appendChild(card);
+    }
+
+    groupsSummary.classList.remove("hidden");
+    var text = allNames.length + " students in " + lastGroups.length + " group" + (lastGroups.length !== 1 ? "s" : "");
+    if (lastGroups.length > 0 && lastGroups[lastGroups.length - 1].length < groupSize) {
+      text += " (last group has " + lastGroups[lastGroups.length - 1].length + ")";
+    }
+    groupsSummary.textContent = text;
+    genBtn.textContent = "Shuffle";
+    copyGroupsBtn.classList.remove("hidden");
+  });
+
+  // Copy groups
+  copyGroupsBtn.addEventListener("click", function() {
+    if (lastGroups.length === 0) return;
+    var text = "";
+    lastGroups.forEach(function(g, i) {
+      text += "Group " + (i + 1) + ": " + g.join(", ") + "\n";
+    });
+    navigator.clipboard.writeText(text.trim()).then(function() {
+      showToast("Copied to clipboard!");
+    }).catch(function() {
+      showToast("Copy failed — try manually");
+    });
+  });
+
+  function showToast(msg) {
+    copyToast.textContent = msg;
+    copyToast.classList.add("show");
+    setTimeout(function() { copyToast.classList.remove("show"); }, 2000);
+  }
+
+  // ========== TIMER ==========
+  var timerDisplay = document.getElementById("timerDisplay");
+  var timerStartBtn = document.getElementById("timerStartBtn");
+  var timerResetBtn = document.getElementById("timerResetBtn");
+  var customTimerInput = document.getElementById("customTimerInput");
+  var customTimerBtn = document.getElementById("customTimerBtn");
+
+  function formatTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function updateTimerDisplay() {
+    timerDisplay.textContent = formatTime(timerRemaining);
+    timerDisplay.classList.remove("warning", "danger");
+    if (timerRemaining <= 5 && timerRemaining > 0) {
+      timerDisplay.classList.add("danger");
+    } else if (timerRemaining <= 15) {
+      timerDisplay.classList.add("warning");
+    }
+  }
+
+  function setTimer(sec) {
+    timerSeconds = sec;
+    timerRemaining = sec;
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerStartBtn.textContent = "Start";
+    updateTimerDisplay();
+    // Update active preset
+    document.querySelectorAll(".timer-preset").forEach(function(btn) {
+      btn.classList.toggle("active", parseInt(btn.getAttribute("data-seconds")) === sec);
+    });
+  }
+
+  document.querySelectorAll(".timer-preset").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      setTimer(parseInt(btn.getAttribute("data-seconds")));
+    });
+  });
+
+  customTimerBtn.addEventListener("click", function() {
+    var val = parseInt(customTimerInput.value);
+    if (val && val >= 5 && val <= 600) {
+      setTimer(val);
+      document.querySelectorAll(".timer-preset").forEach(function(b) { b.classList.remove("active"); });
+    }
+  });
+
+  timerStartBtn.addEventListener("click", function() {
+    if (timerRunning) {
+      // Pause
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerStartBtn.textContent = "Resume";
+    } else {
+      if (timerRemaining <= 0) {
+        timerRemaining = timerSeconds;
+        updateTimerDisplay();
+      }
+      timerRunning = true;
+      timerStartBtn.textContent = "Pause";
+      timerInterval = setInterval(function() {
+        timerRemaining--;
+        updateTimerDisplay();
+        if (timerRemaining <= 5 && timerRemaining > 0) {
+          playTick();
+        }
+        if (timerRemaining <= 0) {
+          clearInterval(timerInterval);
+          timerRunning = false;
+          timerStartBtn.textContent = "Start";
+          playBuzz();
+          timerDisplay.classList.add("danger");
+          timerDisplay.textContent = "0:00";
+        }
+      }, 1000);
+    }
+  });
+
+  timerResetBtn.addEventListener("click", function() {
+    setTimer(timerSeconds);
+  });
+
+  updateTimerDisplay();
+
+})();
+</script>
+</body>
+</html>
